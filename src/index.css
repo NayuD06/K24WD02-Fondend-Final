@@ -1,0 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+:root {
+  font-family: 'VT323', monospace;
+  color: #2b2133;
+  background-color: #f5e9c6;
+  --pixel-border: #2e2a4a;
+  --surface-panel: #f8edcf;
+  --surface-toolbar: #efd8a5;
+  --surface-card: #d9e6f1;
+  --surface-card-inset: #99bfd8;
+  --stripe-a: #efcf7f;
+  --stripe-b: #e9c775;
+  --grid-line: rgba(220, 183, 124, 0.28);
+  --btn-secondary-bg: #d7efc9;
+  --btn-secondary-inset: #9fcb8a;
+  --btn-secondary-text: #22301a;
+  --btn-primary-bg: #a8d3f0;
+  --btn-primary-inset: #78b3d8;
+  --btn-primary-text: #12213f;
+  --btn-danger-bg: #efc9c2;
+  --btn-danger-inset: #d99288;
+  --btn-danger-text: #4b1f1f;
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: auto;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #f5e9c6;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.loading-dots::after {
+  content: '...';
+  display: inline-block;
+  width: 1.4em;
+  overflow: hidden;
+  vertical-align: bottom;
+  animation: dots-step 1s steps(4, end) infinite;
+}
+
+@keyframes dots-step {
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 1.4em;
+  }
+}
+
+button,
+input {
+  font: inherit;
+}
