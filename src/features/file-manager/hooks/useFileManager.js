@@ -2,13 +2,41 @@ import { useMemo, useState } from 'react'
 import { initialItems } from '../data/initialItems'
 import { now, sortItems } from '../utils/fileUtils'
 
+const buildInitialOrderMap = (seedItems) =>
+  seedItems.reduce((acc, item) => {
+    if (!acc[item.parentId]) {
+      acc[item.parentId] = []
+    }
+
+    acc[item.parentId].push(item.id)
+    return acc
+  }, {})
+
+const orderByManualPosition = (list, parentId, manualOrderMap) => {
+  const preferredOrder = manualOrderMap[parentId] || []
+  const positionMap = new Map(preferredOrder.map((id, index) => [id, index]))
+
+  return [...list].sort((a, b) => {
+    const aIndex = positionMap.has(a.id) ? positionMap.get(a.id) : Number.MAX_SAFE_INTEGER
+    const bIndex = positionMap.has(b.id) ? positionMap.get(b.id) : Number.MAX_SAFE_INTEGER
+
+    if (aIndex !== bIndex) {
+      return aIndex - bIndex
+    }
+
+    return a.name.localeCompare(b.name)
+  })
+}
+
 export const useFileManager = () => {
   const [items, setItems] = useState(initialItems)
   const [currentFolderId, setCurrentFolderId] = useState('root')
   const [selectedIds, setSelectedIds] = useState([])
   const [keyword, setKeyword] = useState('')
-  const [sortBy, setSortBy] = useState('name')
+  const [sortBy, setSortBy] = useState('manual')
   const [sortDirection, setSortDirection] = useState('asc')
+  const [pinnedIds, setPinnedIds] = useState([])
+  const [manualOrderMap, setManualOrderMap] = useState(() => buildInitialOrderMap(initialItems))
   const [newFolderName, setNewFolderName] = useState('')
   const [isUploading, setIsUploading] = useState(false)
   const [uploadBatchCount, setUploadBatchCount] = useState(0)
@@ -19,8 +47,19 @@ export const useFileManager = () => {
       item.name.toLowerCase().includes(keyword.trim().toLowerCase()),
     )
 
-    return sortItems(byKeyword, sortBy, sortDirection)
-  }, [items, currentFolderId, keyword, sortBy, sortDirection])
+    const sortChunk = (chunk) => {
+      if (sortBy === 'manual') {
+        return orderByManualPosition(chunk, currentFolderId, manualOrderMap)
+      }
+
+      return sortItems(chunk, sortBy, sortDirection)
+    }
+
+    const pinnedChunk = byKeyword.filter((item) => pinnedIds.includes(item.id))
+    const regularChunk = byKeyword.filter((item) => !pinnedIds.includes(item.id))
+
+    return [...sortChunk(pinnedChunk), ...sortChunk(regularChunk)]
+  }, [items, currentFolderId, keyword, pinnedIds, sortBy, sortDirection, manualOrderMap])
 
   const breadcrumb = useMemo(() => {
     if (currentFolderId === 'root') {
@@ -96,6 +135,10 @@ export const useFileManager = () => {
     }
 
     setItems((prev) => [folder, ...prev])
+    setManualOrderMap((prev) => ({
+      ...prev,
+      [currentFolderId]: [folder.id, ...(prev[currentFolderId] || [])],
+    }))
     setNewFolderName('')
   }
 
@@ -128,6 +171,10 @@ export const useFileManager = () => {
     })
 
     setItems((prev) => [...uploaded, ...prev])
+    setManualOrderMap((prev) => ({
+      ...prev,
+      [currentFolderId]: [...uploaded.map((item) => item.id), ...(prev[currentFolderId] || [])],
+    }))
     setIsUploading(false)
     setUploadBatchCount(0)
   }
@@ -170,10 +217,73 @@ export const useFileManager = () => {
     }
 
     setItems((prev) => prev.filter((item) => !toDelete.has(item.id)))
+    setPinnedIds((prev) => prev.filter((id) => !toDelete.has(id)))
+    setManualOrderMap((prev) => {
+      const next = {}
+
+      for (const [parentId, orderedIds] of Object.entries(prev)) {
+        const cleanedIds = orderedIds.filter((id) => !toDelete.has(id))
+
+        if (cleanedIds.length) {
+          next[parentId] = cleanedIds
+        }
+      }
+
+      return next
+    })
     setSelectedIds([])
   }
 
+  const moveItem = (draggedId, targetId) => {
+    if (!draggedId || !targetId || draggedId === targetId) {
+      return
+    }
+
+    const siblingIds = items
+      .filter((item) => item.parentId === currentFolderId)
+      .map((item) => item.id)
+
+    if (!siblingIds.includes(draggedId) || !siblingIds.includes(targetId)) {
+      return
+    }
+
+    setManualOrderMap((prev) => {
+      const existingOrder = prev[currentFolderId] || []
+      const knownSet = new Set(existingOrder)
+      const mergedOrder = [
+        ...existingOrder.filter((id) => siblingIds.includes(id)),
+        ...siblingIds.filter((id) => !knownSet.has(id)),
+      ]
+
+      const fromIndex = mergedOrder.indexOf(draggedId)
+      const toIndex = mergedOrder.indexOf(targetId)
+
+      if (fromIndex < 0 || toIndex < 0) {
+        return prev
+      }
+
+      const nextOrder = [...mergedOrder]
+      const [dragged] = nextOrder.splice(fromIndex, 1)
+      nextOrder.splice(toIndex, 0, dragged)
+
+      return {
+        ...prev,
+        [currentFolderId]: nextOrder,
+      }
+    })
+  }
+
+  const togglePinned = (id) => {
+    setPinnedIds((prev) => (prev.includes(id) ? prev.filter((entryId) => entryId !== id) : [id, ...prev]))
+  }
+
   const onSortChange = (nextSort) => {
+    if (nextSort === 'manual') {
+      setSortBy('manual')
+      setSortDirection('asc')
+      return
+    }
+
     if (nextSort === sortBy) {
       setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
       return
@@ -185,7 +295,7 @@ export const useFileManager = () => {
 
   const resetFilters = () => {
     setKeyword('')
-    setSortBy('name')
+    setSortBy('manual')
     setSortDirection('asc')
   }
 
@@ -206,6 +316,7 @@ export const useFileManager = () => {
       selectedItems,
       sortBy,
       sortDirection,
+      pinnedIds,
       isUploading,
       uploadBatchCount,
       visibleItems,
@@ -217,11 +328,13 @@ export const useFileManager = () => {
       onSortChange,
       openAt,
       openFolder,
+      moveItem,
       cleanOldFilesView,
       resetFilters,
       renameSelected,
       setKeyword,
       setNewFolderName,
+      togglePinned,
       toggleSelected,
       uploadFiles,
     },

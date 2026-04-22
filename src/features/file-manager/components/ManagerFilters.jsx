@@ -17,10 +17,13 @@ export const ManagerFilters = ({
     <div className="fm-sort-group">
       <button
         type="button"
-        className={keyword || sortBy !== 'name' || sortDirection !== 'asc' ? 'pixel-btn' : 'pixel-btn active'}
+        className={keyword || sortBy !== 'manual' || sortDirection !== 'asc' ? 'pixel-btn' : 'pixel-btn active'}
         onClick={onResetFilters}
       >
         Tat ca
+      </button>
+      <button type="button" className="pixel-btn" onClick={() => onSortChange('manual')}>
+        Vi tri {sortBy === 'manual' ? 'ON' : ''}
       </button>
       <button type="button" className="pixel-btn" onClick={() => onSortChange('name')}>
         Ten {sortBy === 'name' ? (sortDirection === 'asc' ? 'A-Z' : 'Z-A') : ''}
@@ -32,5 +35,7 @@ export const ManagerFilters = ({
         Cap nhat {sortBy === 'updatedAt' ? (sortDirection === 'asc' ? 'UP' : 'DOWN') : ''}
       </button>
     </div>
+
+    <p className="fm-reorder-hint">Keo-tha khi dang o che do Vi tri. File da ghim se luon nam tren dau.</p>
   </section>
 )

@@ -62,8 +62,12 @@ export const FileManagerPage = () => {
       <FileTable
         visibleItems={state.visibleItems}
         selectedIds={state.selectedIds}
+        pinnedIds={state.pinnedIds}
+        canReorder={state.sortBy === 'manual'}
         onToggleSelected={actions.toggleSelected}
         onOpenFolder={actions.openFolder}
+        onMoveItem={actions.moveItem}
+        onTogglePinned={actions.togglePinned}
       />
 
       <PixelAssistant
