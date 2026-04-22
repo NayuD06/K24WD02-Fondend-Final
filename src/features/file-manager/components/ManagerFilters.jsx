@@ -22,9 +22,6 @@ export const ManagerFilters = ({
       >
         Tat ca
       </button>
-      <button type="button" className="pixel-btn" onClick={() => onSortChange('manual')}>
-        Vi tri {sortBy === 'manual' ? 'ON' : ''}
-      </button>
       <button type="button" className="pixel-btn" onClick={() => onSortChange('name')}>
         Ten {sortBy === 'name' ? (sortDirection === 'asc' ? 'A-Z' : 'Z-A') : ''}
       </button>
@@ -36,6 +33,6 @@ export const ManagerFilters = ({
       </button>
     </div>
 
-    <p className="fm-reorder-hint">Keo-tha khi dang o che do Vi tri. File da ghim se luon nam tren dau.</p>
+    <p className="fm-reorder-hint">Keo-tha file de doi vi tri khi dang o che do sap xep thu cong.</p>
   </section>
 )

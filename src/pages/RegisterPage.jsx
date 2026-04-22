@@ -42,8 +42,8 @@ export const RegisterPage = () => {
   return (
     <main className="auth-shell">
       <section className="auth-panel auth-form-panel">
-        <p className="auth-eyebrow">Create Account</p>
-        <h1>Tao tai khoan moi</h1>
+        <p className="auth-eyebrow">PixelDepot</p>
+        <h1>Tao tai khoan</h1>
 
         <form className="auth-form" onSubmit={onSubmit}>
           <label htmlFor="register-name">Ho ten</label>

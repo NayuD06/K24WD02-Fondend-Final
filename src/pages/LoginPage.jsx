@@ -44,8 +44,8 @@ export const LoginPage = () => {
   return (
     <main className="auth-shell">
       <section className="auth-panel auth-form-panel">
-        <p className="auth-eyebrow">Welcome Back</p>
-        <h1>Dang nhap de vao File Manager</h1>
+        <p className="auth-eyebrow">PixelDepot</p>
+        <h1>Dang nhap</h1>
 
         <form className="auth-form" onSubmit={onSubmit}>
           <label htmlFor="login-email">Email</label>

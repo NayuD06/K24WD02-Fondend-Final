@@ -21,20 +21,27 @@ const userInitials = (name) => {
 export const HeaderStats = ({ totalFiles, totalFolders, totalStorage, userName, onLogout }) => (
   <header className="fm-topbar pixel-panel">
     <div className="fm-hero-panel">
-      <div>
-        <p className="fm-eyebrow">Pixel File Manager</p>
-        <h1>Quan ly file theo style retro game</h1>
-      </div>
+      <p className="fm-eyebrow">PixelDepot</p>
 
-      <div className="fm-meta-actions">
-        <div className="fm-user-badge">
-          <span className="fm-user-avatar" aria-hidden="true">
+      <div className="fm-hero-bottom-row">
+        <div className="fm-user-profile-card" aria-label="Thong tin nguoi dung">
+          <span className="fm-user-avatar fm-user-avatar-lg" aria-hidden="true">
             {userInitials(userName || 'Guest')}
           </span>
-          <span className="fm-user-text">User: {userName || 'Guest'}</span>
+
+          <div className="fm-user-name-wrap">
+            <strong>{userName || 'Guest'}</strong>
+          </div>
         </div>
-        <button type="button" className="pixel-btn fm-logout-btn" onClick={onLogout}>
-          Dang xuat
+
+        <button
+          type="button"
+          className="pixel-btn fm-logout-btn fm-logout-icon-btn"
+          onClick={onLogout}
+          aria-label="Dang xuat"
+          title="Dang xuat"
+        >
+          {'-'}
         </button>
       </div>
     </div>

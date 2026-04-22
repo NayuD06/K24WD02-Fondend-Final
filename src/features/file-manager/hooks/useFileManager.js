@@ -28,6 +28,19 @@ const orderByManualPosition = (list, parentId, manualOrderMap) => {
   })
 }
 
+const triggerDownload = (blob, fileName) => {
+  const url = window.URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+
+  anchor.href = url
+  anchor.download = fileName
+  anchor.rel = 'noopener'
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  window.URL.revokeObjectURL(url)
+}
+
 export const useFileManager = () => {
   const [items, setItems] = useState(initialItems)
   const [currentFolderId, setCurrentFolderId] = useState('root')
@@ -40,6 +53,11 @@ export const useFileManager = () => {
   const [newFolderName, setNewFolderName] = useState('')
   const [isUploading, setIsUploading] = useState(false)
   const [uploadBatchCount, setUploadBatchCount] = useState(0)
+  const [renameDialog, setRenameDialog] = useState({
+    isOpen: false,
+    itemId: null,
+    value: '',
+  })
 
   const visibleItems = useMemo(() => {
     const inCurrentFolder = items.filter((item) => item.parentId === currentFolderId)
@@ -116,6 +134,44 @@ export const useFileManager = () => {
     openAt(item.id)
   }
 
+  const removeItemsByIds = (idsToRemove) => {
+    const toRemove = new Set(idsToRemove)
+    let changed = true
+
+    while (changed) {
+      changed = false
+      for (const item of items) {
+        if (toRemove.has(item.parentId) && !toRemove.has(item.id)) {
+          toRemove.add(item.id)
+          changed = true
+        }
+      }
+    }
+
+    setItems((prev) => prev.filter((item) => !toRemove.has(item.id)))
+    setPinnedIds((prev) => prev.filter((id) => !toRemove.has(id)))
+    setRenameDialog((prev) =>
+      prev.itemId && toRemove.has(prev.itemId)
+        ? { isOpen: false, itemId: null, value: '' }
+        : prev,
+    )
+    setManualOrderMap((prev) => {
+      const next = {}
+
+      for (const [parentId, orderedIds] of Object.entries(prev)) {
+        const cleanedIds = orderedIds.filter((id) => !toRemove.has(id))
+
+        if (cleanedIds.length) {
+          next[parentId] = cleanedIds
+        }
+      }
+
+      return next
+    })
+
+    return toRemove
+  }
+
   const createFolder = (event) => {
     event.preventDefault()
 
@@ -163,6 +219,7 @@ export const useFileManager = () => {
       type: 'file',
       parentId: currentFolderId,
       size: file.size,
+      sourceFile: file,
       updatedAt: now(),
     }))
 
@@ -184,18 +241,61 @@ export const useFileManager = () => {
       return
     }
 
-    const target = selectedItems[0]
-    const renamed = window.prompt('Nhap ten moi', target.name)
+    openRenameDialog(selectedItems[0].id)
+  }
 
-    if (!renamed || !renamed.trim()) {
+  const openRenameDialog = (itemId) => {
+    const target = items.find((item) => item.id === itemId)
+
+    if (!target) {
+      return
+    }
+
+    setRenameDialog({
+      isOpen: true,
+      itemId: target.id,
+      value: target.name,
+    })
+  }
+
+  const closeRenameDialog = () => {
+    setRenameDialog({
+      isOpen: false,
+      itemId: null,
+      value: '',
+    })
+  }
+
+  const updateRenameValue = (value) => {
+    setRenameDialog((prev) => ({
+      ...prev,
+      value,
+    }))
+  }
+
+  const submitRename = (event) => {
+    event?.preventDefault?.()
+
+    const target = items.find((item) => item.id === renameDialog.itemId)
+
+    if (!target) {
+      closeRenameDialog()
+      return
+    }
+
+    const nextName = renameDialog.value.trim()
+
+    if (!nextName) {
       return
     }
 
     setItems((prev) =>
       prev.map((item) =>
-        item.id === target.id ? { ...item, name: renamed.trim(), updatedAt: now() } : item,
+        item.id === target.id ? { ...item, name: nextName, updatedAt: now() } : item,
       ),
     )
+
+    closeRenameDialog()
   }
 
   const deleteSelected = () => {
@@ -203,35 +303,45 @@ export const useFileManager = () => {
       return
     }
 
-    const toDelete = new Set(selectedIds)
-    let changed = true
+    removeItemsByIds(selectedIds)
+    setSelectedIds([])
+  }
 
-    while (changed) {
-      changed = false
-      for (const item of items) {
-        if (toDelete.has(item.parentId) && !toDelete.has(item.id)) {
-          toDelete.add(item.id)
-          changed = true
-        }
-      }
+  const deleteItem = (id) => {
+    removeItemsByIds([id])
+    setSelectedIds((prev) => prev.filter((selectedId) => selectedId !== id))
+  }
+
+  const downloadItem = (item) => {
+    if (item.type === 'file' && item.sourceFile) {
+      triggerDownload(item.sourceFile, item.name)
+      return
     }
 
-    setItems((prev) => prev.filter((item) => !toDelete.has(item.id)))
-    setPinnedIds((prev) => prev.filter((id) => !toDelete.has(id)))
-    setManualOrderMap((prev) => {
-      const next = {}
+    if (item.type === 'file') {
+      const fallbackBlob = new Blob(
+        [
+          `Ten file: ${item.name}\n`,
+          `Kich thuoc: ${item.size || 0}\n`,
+          `Cap nhat: ${item.updatedAt}\n`,
+        ],
+        { type: 'text/plain;charset=utf-8' },
+      )
+      triggerDownload(fallbackBlob, item.name)
+      return
+    }
 
-      for (const [parentId, orderedIds] of Object.entries(prev)) {
-        const cleanedIds = orderedIds.filter((id) => !toDelete.has(id))
+    const childItems = items.filter((child) => child.parentId === item.id)
+    const folderBlob = new Blob(
+      [
+        `Thu muc: ${item.name}\n`,
+        `So item con: ${childItems.length}\n`,
+        ...childItems.map((child) => `- ${child.type === 'folder' ? '[DIR]' : '[FILE]'} ${child.name}\n`),
+      ],
+      { type: 'text/plain;charset=utf-8' },
+    )
 
-        if (cleanedIds.length) {
-          next[parentId] = cleanedIds
-        }
-      }
-
-      return next
-    })
-    setSelectedIds([])
+    triggerDownload(folderBlob, `${item.name}.txt`)
   }
 
   const moveItem = (draggedId, targetId) => {
@@ -312,6 +422,7 @@ export const useFileManager = () => {
       currentFolderId,
       keyword,
       newFolderName,
+      renameDialog,
       selectedIds,
       selectedItems,
       sortBy,
@@ -325,15 +436,21 @@ export const useFileManager = () => {
     actions: {
       createFolder,
       deleteSelected,
+      deleteItem,
+      downloadItem,
       onSortChange,
       openAt,
       openFolder,
       moveItem,
       cleanOldFilesView,
+      closeRenameDialog,
       resetFilters,
       renameSelected,
+      openRenameDialog,
+      submitRename,
       setKeyword,
       setNewFolderName,
+      updateRenameValue,
       togglePinned,
       toggleSelected,
       uploadFiles,

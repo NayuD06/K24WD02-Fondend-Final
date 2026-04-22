@@ -41,13 +41,10 @@ export const FileManagerPage = () => {
         newFolderName={state.newFolderName}
         uploadInputRef={uploadInputRef}
         uploadBatchCount={state.uploadBatchCount}
-        selectedItems={state.selectedItems}
         onNavigate={actions.openAt}
         onFolderNameChange={actions.setNewFolderName}
         onCreateFolder={actions.createFolder}
         onUploadFiles={actions.uploadFiles}
-        onRenameSelected={actions.renameSelected}
-        onDeleteSelected={actions.deleteSelected}
       />
 
       <ManagerFilters
@@ -68,7 +65,43 @@ export const FileManagerPage = () => {
         onOpenFolder={actions.openFolder}
         onMoveItem={actions.moveItem}
         onTogglePinned={actions.togglePinned}
+        onDownloadItem={actions.downloadItem}
+        onDeleteItem={actions.deleteItem}
+        onRenameItem={actions.openRenameDialog}
       />
+
+      {state.renameDialog.isOpen ? (
+        <div className="fm-modal-backdrop" role="presentation" onClick={actions.closeRenameDialog}>
+          <section
+            className="fm-modal pixel-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rename-dialog-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="rename-dialog-title">Rename file</h2>
+            <p>Nhap ten moi cho file/folder nay.</p>
+
+            <form className="fm-rename-form" onSubmit={actions.submitRename}>
+              <input
+                autoFocus
+                value={state.renameDialog.value}
+                onChange={(event) => actions.updateRenameValue(event.target.value)}
+                aria-label="Ten moi"
+              />
+
+              <div className="fm-rename-actions">
+                <button type="button" className="pixel-btn" onClick={actions.closeRenameDialog}>
+                  Cancel
+                </button>
+                <button type="submit" className="pixel-btn active">
+                  OK
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      ) : null}
 
       <PixelAssistant
         isOpen={isAssistantOpen}

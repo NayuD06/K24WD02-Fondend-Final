@@ -5,13 +5,10 @@ export const ManagerToolbar = ({
   newFolderName,
   uploadInputRef,
   uploadBatchCount,
-  selectedItems,
   onNavigate,
   onFolderNameChange,
   onCreateFolder,
   onUploadFiles,
-  onRenameSelected,
-  onDeleteSelected,
 }) => (
   <section className="fm-toolbar pixel-panel">
     <div className="fm-breadcrumb" role="navigation" aria-label="Duong dan thu muc">
@@ -45,14 +42,6 @@ export const ManagerToolbar = ({
         {isUploading ? <span className="loading-dots" aria-hidden="true"></span> : null}
         <input ref={uploadInputRef} type="file" multiple onChange={onUploadFiles} disabled={isUploading} />
       </label>
-
-      <button type="button" className="pixel-btn" onClick={onRenameSelected} disabled={selectedItems.length !== 1}>
-        Rename
-      </button>
-
-      <button type="button" className="pixel-btn danger" onClick={onDeleteSelected} disabled={!selectedItems.length}>
-        Delete
-      </button>
     </div>
   </section>
 )

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { formatBytes, formatDate } from '../utils/fileUtils'
 
 export const FileTable = ({
@@ -10,9 +10,36 @@ export const FileTable = ({
   onOpenFolder,
   onMoveItem,
   onTogglePinned,
+  onDownloadItem,
+  onDeleteItem,
+  onRenameItem,
 }) => {
   const [draggingId, setDraggingId] = useState(null)
   const [dragOverId, setDragOverId] = useState(null)
+  const [openMenuId, setOpenMenuId] = useState(null)
+  const tableRef = useRef(null)
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (!tableRef.current?.contains(event.target)) {
+        setOpenMenuId(null)
+      }
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setOpenMenuId(null)
+      }
+    }
+
+    window.addEventListener('pointerdown', handlePointerDown)
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
 
   const onRowDrop = (targetId) => {
     if (!canReorder || !draggingId) {
@@ -25,14 +52,14 @@ export const FileTable = ({
   }
 
   return (
-    <section className="fm-table-wrap pixel-panel" aria-live="polite">
+    <section className="fm-table-wrap pixel-panel" aria-live="polite" ref={tableRef}>
       <div className="fm-table-head fm-table-row">
         <span></span>
         <span>Ten</span>
         <span>Loai</span>
         <span>Dung luong</span>
         <span>Cap nhat</span>
-        <span>Ghim</span>
+        <span>...</span>
       </div>
 
       {visibleItems.length ? (
@@ -79,21 +106,74 @@ export const FileTable = ({
               />
 
               <button className="fm-name-cell" type="button" onClick={() => onOpenFolder(item)}>
-                {canReorder ? <span className="fm-drag-handle">::: </span> : null}
+                {isPinned ? <span className="fm-pin-marker" aria-hidden="true">📌 </span> : canReorder ? <span className="fm-drag-handle">::: </span> : null}
                 {item.type === 'folder' ? '[DIR]' : '[FILE]'} {item.name}
               </button>
 
               <span>{item.type === 'folder' ? 'Folder' : 'File'}</span>
               <span>{item.type === 'folder' ? '-' : formatBytes(item.size)}</span>
               <span>{formatDate(item.updatedAt)}</span>
-              <button
-                type="button"
-                className={isPinned ? 'pixel-btn fm-pin-btn active' : 'pixel-btn fm-pin-btn'}
-                onClick={() => onTogglePinned(item.id)}
-                aria-label={isPinned ? `Bo ghim ${item.name}` : `Ghim ${item.name}`}
-              >
-                {isPinned ? 'PIN' : '...'}
-              </button>
+              <div className="fm-action-menu-wrap">
+                <button
+                  type="button"
+                  className={openMenuId === item.id ? 'pixel-btn fm-menu-trigger active' : 'pixel-btn fm-menu-trigger'}
+                  onClick={() => setOpenMenuId((prev) => (prev === item.id ? null : item.id))}
+                  aria-haspopup="menu"
+                  aria-expanded={openMenuId === item.id}
+                  aria-label={`Mo menu ${item.name}`}
+                >
+                  ...
+                </button>
+
+                {openMenuId === item.id ? (
+                  <div className="fm-action-menu" role="menu" aria-label={`Tuy chon ${item.name}`}>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="fm-action-menu-item"
+                      onClick={() => {
+                        onDownloadItem(item)
+                        setOpenMenuId(null)
+                      }}
+                    >
+                      Download
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="fm-action-menu-item"
+                      onClick={() => {
+                        onTogglePinned(item.id)
+                        setOpenMenuId(null)
+                      }}
+                    >
+                      {isPinned ? 'Bo ghim' : 'Ghim'}
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="fm-action-menu-item"
+                      onClick={() => {
+                        onRenameItem(item.id)
+                        setOpenMenuId(null)
+                      }}
+                    >
+                      Rename
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="fm-action-menu-item danger"
+                      onClick={() => {
+                        onDeleteItem(item.id)
+                        setOpenMenuId(null)
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </div>
           )
         })

@@ -80,12 +80,12 @@ export const WelcomePage = () => {
   return (
     <main className="auth-shell">
       <section className="auth-panel auth-welcome-panel">
-        <p className="auth-eyebrow">Pixel Cloud Drive</p>
+        <p className="auth-eyebrow">PixelDepot</p>
         <h1>Quan ly file nhanh, gon, de dung cho team va ca nhan</h1>
         <p className="auth-tagline">An toan du lieu - thao tac nhanh - giao dien pixel de nho</p>
 
         <p className="auth-copy">
-          Day la bo giao dien file manager theo phong cach pixel, toi uu de ban quan ly tai lieu,
+          Day la bo giao dien file manager PixelDepot theo phong cach pixel, toi uu de ban quan ly tai lieu,
           hinh anh va file du an ngay trong trinh duyet ma van giu duoc su ro rang khi lam viec.
         </p>
 
@@ -161,7 +161,7 @@ export const WelcomePage = () => {
           <article className="auth-info-card">
             <div className="auth-pixel-icon icon-palette" aria-hidden="true"></div>
             <h2>Theme pixel dong bo</h2>
-            <p>Mau sac nhat quan tren welcome, login, register va trang quan ly file.</p>
+            <p>Mau sac nhat quan tren PixelDepot welcome, login, register va trang quan ly file.</p>
           </article>
         </div>
 
